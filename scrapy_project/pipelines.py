@@ -6,9 +6,11 @@ Pipelines are executed in order based on their priority (lower number = higher p
 
 import json
 import os
+import re
 from datetime import datetime, timezone
 
 from itemadapter import ItemAdapter
+from markdownify import markdownify as md
 from scrapy.exceptions import DropItem
 
 from scrapy_project.items import LinkItem, PageItem
@@ -29,6 +31,63 @@ class ValidationPipeline:
                 raise DropItem("Missing source_url or target_url in LinkItem")
 
         return item
+
+
+class MarkdownPipeline:
+    """Convert HTML content to Markdown format."""
+
+    def __init__(self, strip_tags=None, heading_style="atx"):
+        """
+        Initialize the markdown converter.
+
+        Args:
+            strip_tags: List of HTML tags to strip from output
+            heading_style: Style for headings ('atx' for # or 'setext' for underlines)
+        """
+        self.strip_tags = strip_tags or ["script", "style", "nav", "footer", "aside"]
+        self.heading_style = heading_style
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(
+            strip_tags=crawler.settings.getlist("MARKDOWN_STRIP_TAGS"),
+            heading_style=crawler.settings.get("MARKDOWN_HEADING_STYLE", "atx"),
+        )
+
+    def process_item(self, item, spider):
+        """Convert HTML content to markdown for PageItems."""
+        if not isinstance(item, PageItem):
+            return item
+
+        adapter = ItemAdapter(item)
+        html_content = adapter.get("html_content")
+
+        if html_content:
+            # Convert HTML to markdown
+            markdown = md(
+                html_content,
+                heading_style=self.heading_style,
+                strip=self.strip_tags,
+            )
+
+            # Clean up the markdown output
+            markdown = self._clean_markdown(markdown)
+            adapter["markdown_content"] = markdown
+        else:
+            adapter["markdown_content"] = ""
+
+        return item
+
+    def _clean_markdown(self, text):
+        """Clean up markdown output."""
+        # Remove excessive blank lines (more than 2 consecutive)
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        # Remove leading/trailing whitespace from lines
+        lines = [line.strip() for line in text.split("\n")]
+        text = "\n".join(lines)
+        # Remove leading/trailing whitespace from document
+        text = text.strip()
+        return text
 
 
 class DuplicateFilterPipeline:

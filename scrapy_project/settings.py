@@ -39,9 +39,14 @@ SPIDER_MIDDLEWARES = {
 # Configure item pipelines
 ITEM_PIPELINES = {
     "scrapy_project.pipelines.ValidationPipeline": 100,
+    "scrapy_project.pipelines.MarkdownPipeline": 150,
     "scrapy_project.pipelines.DuplicateFilterPipeline": 200,
     "scrapy_project.pipelines.JsonWriterPipeline": 300,
 }
+
+# Markdown conversion settings
+MARKDOWN_STRIP_TAGS = ["script", "style", "nav", "footer", "aside", "noscript"]
+MARKDOWN_HEADING_STYLE = "atx"  # Use # for headings
 
 # Enable and configure HTTP caching
 HTTPCACHE_ENABLED = True

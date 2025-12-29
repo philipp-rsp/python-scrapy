@@ -89,7 +89,9 @@ class CrawlerSpider(scrapy.Spider):
         page_item["url"] = response.url
         page_item["title"] = self._extract_title(response)
         page_item["description"] = self._extract_description(response)
+        page_item["html_content"] = self._extract_html_content(response)
         page_item["text_content"] = self._extract_text_content(response)
+        page_item["markdown_content"] = None  # Set by MarkdownPipeline
         page_item["depth"] = current_depth
         page_item["timestamp"] = datetime.now(timezone.utc).isoformat()
 
@@ -139,6 +141,26 @@ class CrawlerSpider(scrapy.Spider):
                 'meta[property="og:description"]::attr(content)'
             ).get()
         return description.strip() if description else ""
+
+    def _extract_html_content(self, response):
+        """Extract the main HTML content from the page body."""
+        # Try to get main content areas first
+        main_content = response.css("main").get()
+        if not main_content:
+            main_content = response.css("article").get()
+        if not main_content:
+            main_content = response.css('[role="main"]').get()
+        if not main_content:
+            # Fall back to body content
+            main_content = response.css("body").get()
+
+        if main_content:
+            # Limit HTML length to avoid huge items
+            max_length = 50000
+            if len(main_content) > max_length:
+                main_content = main_content[:max_length] + "<!-- truncated -->"
+
+        return main_content or ""
 
     def _extract_text_content(self, response):
         """Extract the main text content from the page."""

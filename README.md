@@ -7,6 +7,7 @@ A web crawler built with Python and Scrapy that crawls websites and follows outg
 - Crawls websites starting from a specified URL
 - Follows outgoing links up to a configurable depth
 - Extracts page content (title, description, text)
+- **Converts HTML content to Markdown format**
 - Tracks all discovered links (internal and external)
 - Respects robots.txt
 - Configurable rate limiting and auto-throttling
@@ -63,7 +64,9 @@ Crawl results are saved to the `data/` directory:
     "url": "https://example.com",
     "title": "Example Domain",
     "description": "This domain is for use in examples",
+    "html_content": "<main>...</main>",
     "text_content": "...",
+    "markdown_content": "# Example Domain\n\nThis is an example...",
     "outgoing_links": ["https://example.com/page1"],
     "depth": 0,
     "timestamp": "2024-01-01T12:00:00Z"
@@ -91,6 +94,11 @@ Edit `scrapy_project/settings.py` to customize:
 - `DOWNLOAD_DELAY` - Delay between requests in seconds (default: 1)
 - `DEPTH_LIMIT` - Maximum crawl depth (default: 2)
 - `ROBOTSTXT_OBEY` - Respect robots.txt (default: True)
+
+### Markdown Settings
+
+- `MARKDOWN_STRIP_TAGS` - HTML tags to strip (default: script, style, nav, footer, aside, noscript)
+- `MARKDOWN_HEADING_STYLE` - Heading style: "atx" for `#` or "setext" for underlines (default: atx)
 
 ## Project Structure
 
